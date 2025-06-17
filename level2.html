@@ -68,10 +68,14 @@
   </style>
 </head>
 <body>
-  <audio id="bgm" autoplay loop>
-    <source src="music/game-music.mp3" type="audio/mpeg">
-    您的瀏覽器不支援音樂播放。
-  </audio>
+
+  <header>
+    <h1>收集淨水</h1>
+    <div class="score">
+      健康值: <span id="health">100</span>
+      <span>分數: <span id="score">0</span></span>
+    </div>
+  </header>
 
   <!-- 說明彈窗 -->
   <div id="instructionOverlay">
@@ -84,13 +88,8 @@
     </div>
   </div>
 
-  <header>
-    <h1>收集淨水</h1>
-    <div class="score">
-      健康值: <span id="health">100</span>
-      <span>分數: <span id="score">0</span></span>
-    </div>
-  </header>
+  <!-- 背景音樂 -->
+  <audio id="bgm" src="music/game-music.mp3" loop></audio>
 
   <div id="gameStatus">得分：<span id="scoreCenter">0</span> / 100</div>
 
@@ -98,6 +97,7 @@
   <button id="nextButton" onclick="location.href='level3.html'">前往下一關</button>
 
   <script>
+    const bgm = document.getElementById("bgm");  
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     const healthDisplay = document.getElementById("health");
@@ -125,6 +125,7 @@
       document.getElementById("instructionOverlay").style.display = "none";
       gameStarted = true;
       spawnInterval = setInterval(spawnDrop, 800);
+      bgm.play();	  
       update();
     }
 
