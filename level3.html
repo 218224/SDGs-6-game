@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SDGs 淨水及衛生遊戲</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #e0f7fa; }
+    header {
+      background: #0077b6; color: white; padding: 1rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    h1 { margin: 0; font-size: 1.5rem; font-weight: bold; }
+    .timer { font-size: 1.2rem; }
+    #gameBoard {
+      display: grid;
+      grid-template-columns: repeat(5, 80px);
+      grid-template-rows: repeat(5, 80px);
+      gap: 5px;
+      padding: 1rem;
+      justify-content: center;
+    }
+    .cell {
+      width: 80px; height: 80px;
+      background: #ffffff;
+      border: 2px solid #0077b6;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .pipe {
+      width: 70px; height: 70px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      cursor: grab;
+    }
+    #pipeBox {
+      display: flex; justify-content: center; gap: 10px;
+      margin: 1rem;
+    }
+    #nextButton {
+      display: none;
+      margin: 1rem auto;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+    .success { background-color: #c8e6c9 !important; }
+
+    #instructionOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    #instructionOverlay .content {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      max-width: 600px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <audio id="bgm" autoplay loop muted>
+    <source src="music/game-music.mp3" type="audio/mpeg">
+  </audio>
+
+  <header>
+    <h1>修水管遊戲</h1>
+    <div class="timer">倒數時間：<span id="timer">02:00</span></div>
+  </header>
+
+  <!-- 遊戲說明彈窗 -->
+  <div id="instructionOverlay">
+    <div class="content">
+      <h2>遊戲說明</h2>
+      <p>請拖曳適當的水管，讓水從水源順利流到水龍頭。</p>
+      <p>每一格只能放置一個水管，位置與方向需正確。</p>
+      <p>限時 2 分鐘內完成拼接才可過關！</p>
+      <button onclick="startGame()" style="margin-top: 1rem; padding: 0.5rem 1rem; font-size: 1rem;">開始遊戲</button>
+    </div>
+  </div>
+
+  <div id="gameBoard">
+    <!-- 水管格子由 JS 生成 -->
+  </div>
+
+  <div id="pipeBox">
+    <div class="pipe" draggable="true" style="background-image: url('images/level3/pipe-vertical.png');" data-type="vertical"></div>
+    <div class="pipe" draggable="true" style="background-image: url('images/level3/pipe-horizonal.png');" data-type="horizonal"></div>
+    <div class="pipe" draggable="true" style="background-image: url('images/level3/pipe-upright.png');" data-type="upright"></div>
+    <div class="pipe" draggable="true" style="background-image: url('images/level3/pipe-downleft.png');" data-type="downleft"></div>
+    <div class="pipe" draggable="true" style="background-image: url('images/level3/pipe-leftup.png');" data-type="leftup"></div>
+    <div class="pipe" draggable="true" style="background-image: url('images/level3/pipe-rightdown.png');" data-type="rightdown"></div>
+  </div>
+
+  <button id="nextButton" onclick="location.href='level4.html'">前往下一關</button>
+
+  <script>
+    const board = document.getElementById("gameBoard");
+    const nextButton = document.getElementById("nextButton");
+    const timerDisplay = document.getElementById("timer");
+    let timer = 120;
+    let timerInterval;
+
+    const solution = [
+      ['horizonal', 'horizonal', 'rightdown', null, null],
+      [null, 'downleft', 'leftup', null, null],
+      [null, 'vertical', null, null, null],
+      [null, 'vertical', null, null, null],
+      [null, 'upright', 'horizonal', 'horizonal', 'rightdown']
+    ];
+
+    function startGame() {
+      document.getElementById("instructionOverlay").style.display = "none";
+      createBoard();
+      startTimer();
+    }
+
+    function createBoard() {
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.addEventListener("dragover", e => e.preventDefault());
+          cell.addEventListener("drop", dropPipe);
+          board.appendChild(cell);
+        }
+      }
+    }
+
+    const pipes = document.querySelectorAll(".pipe");
+    pipes.forEach(pipe => {
+      pipe.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("type", e.target.dataset.type);
+        e.dataTransfer.setData("html", e.target.style.backgroundImage);
+      });
+    });
+
+    function dropPipe(e) {
+      const type = e.dataTransfer.getData("type");
+      const image = e.dataTransfer.getData("html");
+      const dropped = document.createElement("div");
+      dropped.className = "pipe";
+      dropped.style.backgroundImage = image;
+      dropped.dataset.type = type;
+      e.currentTarget.innerHTML = "";
+      e.currentTarget.appendChild(dropped);
+      checkSolution();
+    }
+
+    function checkSolution() {
+      let correct = true;
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          const cell = board.children[r * 5 + c];
+          const expected = solution[r][c];
+          const pipe = cell.querySelector(".pipe");
+          if (expected === null) continue;
+          if (!pipe || pipe.dataset.type !== expected) {
+            correct = false;
+          }
+        }
+      }
+      if (correct) {
+        board.querySelectorAll(".cell").forEach(cell => cell.classList.add("success"));
+        nextButton.style.display = "block";
+        clearInterval(timerInterval);
+      }
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timer--;
+        const min = String(Math.floor(timer / 60)).padStart(2, '0');
+        const sec = String(timer % 60).padStart(2, '0');
+        timerDisplay.textContent = `${min}:${sec}`;
+        if (timer <= 0) {
+          clearInterval(timerInterval);
+          alert("時間到！請重新挑戰。");
+          setTimeout(() => location.href = 'index.html', 5000);
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
