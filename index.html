@@ -53,6 +53,12 @@
     .hidden {
       display: none;
     }
+    #nextButton {
+      display: none;
+      margin: 1rem auto;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }	
     .instruction {
       background: rgba(255, 255, 255, 0.9);
       padding: 1.5rem;
@@ -83,7 +89,7 @@
 
     <!-- 題目區塊 -->
     <div id="game" class="hidden"></div>
-    <button id="nextButton" class="next-btn hidden" onclick="location.href='level3.html'">前往下一關</button>
+    <button id="nextButton" class="next-btn hidden" onclick="location.href='level2.html'">前往下一關</button>
   </main>
 
   <!-- 背景音樂 -->
@@ -147,6 +153,7 @@
       } else {
         if (score >= 60) {
           gameEl.innerHTML = `<h2>🎉 恭喜完成「淨水及衛生」關卡！將於 3 秒後前往下一關...</h2>`;
+          nextButton.style.display = "block";		  
           setTimeout(() => {
             window.location.href = "level2.html";
           }, 5000);
